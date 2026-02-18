@@ -1,7 +1,4 @@
-# ============================================================
-# RICH HISTORIC DATA VISUALIZATION
-# ============================================================
-
+#RICH HISTORIC DATA VISUALIZATION
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -13,16 +10,12 @@ print("="*70)
 print("RICH HISTORIC DATA VISUALIZATION")
 print("="*70)
 
-# ============================================================
 # CONFIGURATION
-# ============================================================
 DATA_PATH = Path("data_preprocessed")
 OUTPUT_PATH = Path("artifacts/visualizations")
 OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
-# ============================================================
 # LOAD DATA
-# ============================================================
 print("\nLoading data...")
 
 df = pd.read_csv(DATA_PATH / "df_preprocessed.csv")
@@ -31,9 +24,7 @@ df_claims = pd.read_csv(DATA_PATH / "df_claims_classified.csv")
 print(f"Total Visits: {len(df):,}")
 print(f"Total Claims: {len(df_claims):,}")
 
-# ============================================================
 # KEY STATISTICS
-# ============================================================
 print("\n" + "="*70)
 print("KEY STATISTICS")
 print("="*70)
@@ -63,9 +54,7 @@ DATA SUMMARY:
     HIGH: {complexity_dist.get('HIGH', 0):,} ({complexity_dist.get('HIGH', 0)/total_claims*100:.1f}%)
 """)
 
-# ============================================================
-# VISUALIZATION 1: MAIN INFOGRAPHIC
-# ============================================================
+#visual1
 print("\nCreating main infographic...")
 
 fig = plt.figure(figsize=(16, 12))
@@ -79,10 +68,7 @@ fig.suptitle('Rich Historic Data: The Foundation of Accurate Predictions',
 fig.text(0.5, 0.93, 'Workers Compensation Claims Dataset Overview', 
          fontsize=14, ha='center', color='#7f8c8d')
 
-# ============================================================
 # TOP ROW: BIG NUMBERS
-# ============================================================
-
 # Create grid
 gs = fig.add_gridspec(3, 4, hspace=0.4, wspace=0.3, 
                        left=0.05, right=0.95, top=0.88, bottom=0.08)
@@ -112,10 +98,8 @@ for i, (value, label, color, icon) in enumerate(stats):
     
     # Label
     ax.text(5, 2.5, label, fontsize=12, ha='center', va='center', color='#2c3e50')
-
-# ============================================================
+  
 # MIDDLE LEFT: Complexity Distribution (Pie)
-# ============================================================
 ax1 = fig.add_subplot(gs[1, :2])
 
 colors_complexity = ['#2ecc71', '#f39c12', '#e74c3c']
@@ -133,9 +117,7 @@ for autotext in autotexts:
 ax1.set_title('Claim Complexity Distribution', fontsize=14, fontweight='bold', pad=10)
 ax1.legend(wedges, labels, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=10)
 
-# ============================================================
 # MIDDLE RIGHT: Cost Distribution (Histogram)
-# ============================================================
 ax2 = fig.add_subplot(gs[1, 2:])
 
 # Cap at 99th percentile for visualization
@@ -155,9 +137,7 @@ ax2.set_xlim(0, cost_cap)
 # Format x-axis
 ax2.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1000:.0f}K'))
 
-# ============================================================
 # BOTTOM LEFT: Visits per Claim Distribution
-# ============================================================
 ax3 = fig.add_subplot(gs[2, :2])
 
 visits_per_claim = df.groupby('CLAIM_ID').size()
@@ -174,9 +154,7 @@ ax3.set_ylabel('Number of Claims', fontsize=11)
 ax3.set_title('Visit Frequency Distribution', fontsize=14, fontweight='bold', pad=10)
 ax3.legend(fontsize=10)
 
-# ============================================================
 # BOTTOM RIGHT: Cost by Complexity (Box Plot)
-# ============================================================
 ax4 = fig.add_subplot(gs[2, 2:])
 
 complexity_order = ['LOW', 'MED', 'HIGH']
@@ -193,17 +171,13 @@ ax4.set_ylabel('Total Claim Cost ($)', fontsize=11)
 ax4.set_title('Cost Range by Complexity', fontsize=14, fontweight='bold', pad=10)
 ax4.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1000:.0f}K'))
 
-# ============================================================
 # SAVE
-# ============================================================
 plt.savefig(OUTPUT_PATH / 'rich_data_infographic.png', dpi=200, bbox_inches='tight',
             facecolor='#f8f9fa', edgecolor='none')
 plt.close()
 print(f"Saved: {OUTPUT_PATH / 'rich_data_infographic.png'}")
 
-# ============================================================
-# VISUALIZATION 2: DATA ENABLER SUMMARY (Simple)
-# ============================================================
+#visual2
 print("\nCreating data enabler summary...")
 
 fig2, ax = plt.subplots(figsize=(14, 8))
@@ -264,9 +238,7 @@ plt.savefig(OUTPUT_PATH / 'data_enabler_dark.png', dpi=200, bbox_inches='tight',
 plt.close()
 print(f"Saved: {OUTPUT_PATH / 'data_enabler_dark.png'}")
 
-# ============================================================
-# VISUALIZATION 3: LIGHT VERSION
-# ============================================================
+#visual 3
 print("\nCreating light version...")
 
 fig3, ax = plt.subplots(figsize=(14, 8))
@@ -337,12 +309,9 @@ plt.savefig(OUTPUT_PATH / 'data_enabler_light.png', dpi=200, bbox_inches='tight'
 plt.close()
 print(f"Saved: {OUTPUT_PATH / 'data_enabler_light.png'}")
 
-# ============================================================
-# SUMMARY
-# ============================================================
-print("\n" + "="*70)
+
 print("VISUALIZATION COMPLETE")
-print("="*70)
+
 print(f"""
 FILES SAVED:
   1. {OUTPUT_PATH / 'rich_data_infographic.png'} (detailed infographic)
