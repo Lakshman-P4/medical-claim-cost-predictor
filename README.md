@@ -225,9 +225,9 @@ The routing system went through several iterations, each addressing a fundamenta
 
 | Complexity  | Accuracy   | Precision | Recall | Claims      |
 | ----------- | ---------- | --------- | ------ | ----------- |
-| LOW         | 91.27%     | —         | —      | 33,128      |
-| MED         | 71.01%     | —         | —      | 33,384      |
-| HIGH        | 76.38%     | —         | —      | 33,618      |
+| LOW         | 71.01%     | —         | —      | 33,128      |
+| MED         | 76.38%     | —         | —      | 33,384      |
+| HIGH        | 91.27%     | —         | —      | 33,618      |
 | **Overall** | **87.17%** | —         | —      | **100,130** |
 
 **Why this matters:**
