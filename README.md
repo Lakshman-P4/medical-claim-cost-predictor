@@ -248,14 +248,6 @@ Each complexity tier has its own regression model, trained exclusively on claims
 
 All regression models are trained on **partial visit sequences** using LSTM embeddings as features. The models learn from the complete historical visit data (all visits available for each claim) and use the embeddings to capture sequential patterns. This approach follows the principle: _train on complete data, predict with available data_.
 
-**Results — First Model Iteration (Hybrid models, 10-fold CV with early embeddings):**
-
-| Complexity | Claims | Cost Range      | Best Model | MAE  | RMSE |
-| ---------- | ------ | --------------- | ---------- | ---- | ---- |
-| LOW        | 33,373 | $0.48 – $3,667  | Hybrid     | $74  | $107 |
-| MED        | 33,384 | $0.06 – $17,492 | Hybrid     | $87  | $147 |
-| HIGH       | 22,782 | $0.75 – $49,914 | Hybrid     | $167 | $310 |
-
 **Results — Final Model Iteration (Actual labels, 5 models per tier):**
 
 | Complexity | Claims | Samples | Cost Range      | Best Model | R²     | MAE    |
