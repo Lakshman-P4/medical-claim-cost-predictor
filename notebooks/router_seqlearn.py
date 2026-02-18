@@ -26,9 +26,6 @@ print("="*70)
 print("ROUTER TRAINING - PARTIAL SEQUENCES")
 print("="*70)
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
 DATA_PATH = Path("data_preprocessed")
 ARTIFACTS_PATH = Path("artifacts")
 LSTM_PATH = ARTIFACTS_PATH / "lstm_autoencoder"
@@ -39,12 +36,8 @@ RANDOM_STATE = 42
 N_FOLDS = 5
 MAX_SEQUENCE_LENGTH = 50
 
-# ============================================================
-# STEP 1: LOAD LSTM ENCODER
-# ============================================================
-print("\n" + "="*70)
-print("STEP 1: LOAD LSTM ENCODER")
-print("="*70)
+
+print("STEP 1: LOAD")
 
 encoder = load_model(LSTM_PATH / 'lstm_encoder.keras')
 print("✓ Loaded LSTM encoder")
@@ -54,13 +47,6 @@ with open(LSTM_PATH / 'lstm_artifacts.pkl', 'rb') as f:
 sequence_features = lstm_artifacts['sequence_features']
 label_encoders = lstm_artifacts['label_encoders']
 print(f"Sequence features: {len(sequence_features)}")
-
-# ============================================================
-# STEP 2: LOAD DATA
-# ============================================================
-print("\n" + "="*70)
-print("STEP 2: LOAD DATA")
-print("="*70)
 
 df = pd.read_csv(DATA_PATH / "df_preprocessed.csv")
 print(f"Loaded {len(df):,} visits")
@@ -78,12 +64,7 @@ claim_complexity = df_claims.set_index('CLAIM_ID')['COMPLEXITY'].to_dict()
 print(f"\nActual Complexity Distribution:")
 print(df_claims['COMPLEXITY'].value_counts())
 
-# ============================================================
-# STEP 3: PREPARE DATA
-# ============================================================
-print("\n" + "="*70)
-print("STEP 3: PREPARE DATA")
-print("="*70)
+print("STEP 2: PREPARE DATA")
 
 if 'ICD_COUNT' not in df.columns:
     if 'unique_icd_codes_count' in df.columns:
@@ -107,12 +88,7 @@ print(f"Sequence features available: {len(sequence_features_available)}")
 for col in sequence_features_available:
     df[col] = df[col].fillna(0)
 
-# ============================================================
-# STEP 4: CREATE PARTIAL SEQUENCES
-# ============================================================
-print("\n" + "="*70)
-print("STEP 4: CREATE PARTIAL SEQUENCES")
-print("="*70)
+print("STEP 3: CREATE PARTIAL SEQUENCES")
 
 partial_data = []
 
@@ -126,7 +102,6 @@ for claim_id, group in df.groupby('CLAIM_ID'):
     
     n_visits = len(full_seq)
     
-    # Create partial sequences
     for end_idx in range(1, n_visits + 1):
         partial_seq = full_seq[:end_idx]
         
@@ -139,17 +114,11 @@ for claim_id, group in df.groupby('CLAIM_ID'):
 
 print(f"Created {len(partial_data):,} partial sequence samples")
 
-# Check distribution
 complexity_counts = pd.Series([d['complexity'] for d in partial_data]).value_counts()
 print(f"\nPartial Sequence Complexity Distribution:")
 print(complexity_counts)
 
-# ============================================================
-# STEP 5: SCALE AND PAD
-# ============================================================
-print("\n" + "="*70)
-print("STEP 5: SCALE AND PAD SEQUENCES")
-print("="*70)
+print("STEP 4: SCALE AND PAD SEQUENCES")
 
 all_seqs = [d['sequence'] for d in partial_data]
 all_visits_flat = np.vstack(all_seqs)
@@ -175,36 +144,26 @@ X_padded = pad_sequences(
 
 print(f"Padded shape: {X_padded.shape}")
 
-# ============================================================
-# STEP 6: GENERATE EMBEDDINGS
-# ============================================================
-print("\n" + "="*70)
-print("STEP 6: GENERATE EMBEDDINGS")
-print("="*70)
+print("STEP 5: GENERATE EMBEDDINGS")
 
 lstm_input_dim = encoder.input_shape[-1]
 our_dim = X_padded.shape[-1]
 
 if lstm_input_dim != our_dim:
-    print(f"⚠️ Feature mismatch! Using mean-pooled embeddings")
+    print(f" Feature mismatch! Using mean-pooled embeddings")
     embeddings = np.mean(X_padded, axis=1)
 else:
     embeddings = encoder.predict(X_padded, verbose=1)
 
 print(f"Embeddings shape: {embeddings.shape}")
 
-# ============================================================
-# STEP 7: PREPARE FOR TRAINING
-# ============================================================
-print("\n" + "="*70)
-print("STEP 7: PREPARE FOR TRAINING")
-print("="*70)
+print("STEP 6: PREPARE FOR TRAINING")
 
-# Scale embeddings
+#Scale embeddings
 scaler_emb = StandardScaler()
 X = scaler_emb.fit_transform(embeddings)
 
-# Encode labels
+#Encode labels
 y_raw = np.array([d['complexity'] for d in partial_data])
 le_complexity = LabelEncoder()
 y = le_complexity.fit_transform(y_raw)
@@ -213,14 +172,9 @@ print(f"Features: {X.shape}")
 print(f"Classes: {le_complexity.classes_}")
 print(f"Class distribution: {np.bincount(y)}")
 
-# ============================================================
-# STEP 8: TRAIN ROUTER
-# ============================================================
-print("\n" + "="*70)
-print("STEP 8: TRAIN ROUTER (XGBoost)")
-print("="*70)
+print("STEP 7: TRAIN ROUTER (XGBoost)")
 
-# Good params from before
+#Good params from before
 model = xgb.XGBClassifier(
     n_estimators=200,
     max_depth=8,
@@ -234,7 +188,7 @@ model = xgb.XGBClassifier(
     eval_metric='mlogloss'
 )
 
-# Cross-validation
+#Cross-val
 cv = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
 
 print("Running cross-validation...")
@@ -243,37 +197,27 @@ y_pred_cv = cross_val_predict(model, X, y, cv=cv, n_jobs=-1)
 accuracy = accuracy_score(y, y_pred_cv)
 print(f"\nCross-Validation Accuracy: {accuracy*100:.2f}%")
 
-# Classification report
+#Class. rep
 print("\nClassification Report:")
 print(classification_report(y, y_pred_cv, target_names=le_complexity.classes_))
 
-# Confusion matrix
+#Con. matrix
 cm = confusion_matrix(y, y_pred_cv)
 print("\nConfusion Matrix:")
 print(cm)
 
-# Per-class accuracy
+#per-class accuracy
 print("\nPer-Class Accuracy:")
 for i, cls in enumerate(le_complexity.classes_):
     class_acc = cm[i, i] / cm[i].sum()
     print(f"  {cls}: {class_acc*100:.2f}%")
 
-# ============================================================
-# STEP 9: TRAIN FINAL MODEL
-# ============================================================
-print("\n" + "="*70)
-print("STEP 9: TRAIN FINAL MODEL")
-print("="*70)
+print("STEP 8: TRAIN FINAL MODEL")
 
 model.fit(X, y)
 print(f"Final model trained on {len(X):,} samples")
 
-# ============================================================
-# STEP 10: SAVE ARTIFACTS
-# ============================================================
-print("\n" + "="*70)
-print("STEP 10: SAVE ARTIFACTS")
-print("="*70)
+print("STEP 9: SAVE ARTIFACTS")
 
 joblib.dump(model, ROUTER_PATH / 'router_xgb_best.joblib')
 print(f"Saved: {ROUTER_PATH / 'router_xgb_best.joblib'}")
@@ -293,18 +237,13 @@ with open(ROUTER_PATH / 'router_artifacts.pkl', 'wb') as f:
     pickle.dump(router_artifacts, f)
 print(f"Saved: {ROUTER_PATH / 'router_artifacts.pkl'}")
 
-# ============================================================
-# STEP 11: VISUALIZATION
-# ============================================================
-print("\n" + "="*70)
-print("STEP 11: VISUALIZATION")
-print("="*70)
+print("STEP 10: VISUALIZATION")
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 fig.suptitle(f'Router (Partial Sequences) - Accuracy: {accuracy*100:.2f}%', 
              fontsize=14, fontweight='bold')
 
-# Confusion Matrix
+#Con. Matrix
 ax1 = axes[0]
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
             xticklabels=le_complexity.classes_,
@@ -313,7 +252,7 @@ ax1.set_xlabel('Predicted')
 ax1.set_ylabel('Actual')
 ax1.set_title('Confusion Matrix')
 
-# Per-Class Accuracy
+#Per-Class Accuracy
 ax2 = axes[1]
 classes = le_complexity.classes_
 class_accs = [cm[i, i] / cm[i].sum() * 100 for i in range(len(classes))]
@@ -332,12 +271,8 @@ plt.savefig(ROUTER_PATH / 'router_partial_results.png', dpi=150, bbox_inches='ti
 plt.close()
 print(f"Saved: {ROUTER_PATH / 'router_partial_results.png'}")
 
-# ============================================================
-# SUMMARY
-# ============================================================
-print("\n" + "="*70)
+
 print("ROUTER (PARTIAL SEQUENCES) COMPLETE")
-print("="*70)
 
 print(f"""
 SUMMARY
@@ -358,5 +293,5 @@ FILES SAVED:
   2. {ROUTER_PATH / 'router_artifacts.pkl'}
   3. {ROUTER_PATH / 'router_partial_results.png'}
 
-NEXT: Re-run final_inference.py
+NEXT task: Re-run final_inference.py
 """)
